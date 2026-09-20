@@ -728,7 +728,9 @@ async function handle(req, res) {
     const query = new URLSearchParams(url.search);
     if (req.query) for (const [k, v] of Object.entries(req.query)) if (k !== 'slug') query.set(k, [].concat(v)[0]); // hébergement Vercel : paramètres déjà lus
     const slug = req.query && req.query.slug; // hébergement Vercel : segments de l'adresse après /api/
-    if (slug && [].concat(slug).length) p = '/api/' + [].concat(slug).join('/');
+    const flat = query.get('__p'); query.delete('__p'); // l'application envoie les adresses à plusieurs niveaux sous la forme /api/r?__p=niveau1/niveau2 (Vercel n'accepte qu'un seul niveau)
+    if (flat) p = '/api/' + flat.replace(/^\/+/, '');
+    else if (slug && [].concat(slug).length) p = '/api/' + [].concat(slug).join('/');
     p = p.replace(/\/+$/, '') || '/api';
 
     let route = null; const params = {};
