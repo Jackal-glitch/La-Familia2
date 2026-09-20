@@ -427,10 +427,16 @@ const badge = r => { const [l, c] = STATUS[r.status]; return `<span class="badge
 const NO_SERVER = location.protocol === 'file:'
   ? "Cette page est ouverte comme un simple fichier. Lancez le serveur (demarrer.command ou demarrer.bat), puis ouvrez http://localhost:3000 dans le navigateur."
   : "Impossible de joindre le serveur. Vérifiez que sa fenêtre est toujours ouverte, puis réessayez.";
+// Les adresses à plusieurs niveaux (ex. /api/loans/PR-0001/payments) sont envoyées sous la forme /api/r?__p=loans/PR-0001/payments :
+// certains hébergeurs (Vercel) n'acceptent qu'un seul niveau après /api/.
+function apiUrl(url) {
+  const [path, qs] = url.split('?'), rest = path.replace(/^\/api\//, '');
+  return rest.includes('/') ? '/api/r?__p=' + encodeURIComponent(rest) + (qs ? '&' + qs : '') : url;
+}
 async function api(method, url, body) {
   let r;
   try {
-    r = await fetch(url, {
+    r = await fetch(apiUrl(url), {
       method,
       headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: 'Bearer ' + S.token } : {}) },
       body: body !== undefined ? JSON.stringify(body) : undefined
