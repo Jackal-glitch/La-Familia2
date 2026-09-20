@@ -1,0 +1,8 @@
+{
+  "name": "la-familia-prets",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Gestion des prêts de La Familia (Vercel + base Turso)",
+  "scripts": { "start": "node local.js" },
+  "dependencies": { "@libsql/client": "^0.14.0 || ^0.15.0" }
+}

@@ -1,0 +1,172 @@
+LA FAMILIA - GESTION DES PRÊTS (VERSION EN LIGNE)
+=================================================
+
+Une fois l'application en ligne, il n'y a plus rien à installer sur les ordinateurs : chaque personne ouvre une adresse
+dans son navigateur (ordinateur ou téléphone) et se connecte avec son nom d'utilisateur et son mot de passe.
+Les écrans se synchronisent tout seuls toutes les 10 secondes environ (mot "Synchronisé" avec un point vert).
+La mise en ligne se fait UNE SEULE FOIS, par une seule personne, uniquement avec le navigateur.
+
+CONTENU DU DOSSIER
+  public/index.html            L'application (écrans, assistant d'import)
+  public/lending.js            Règles de calcul des intérêts (utilisées par l'application et par le serveur)
+  api/[...slug].js             Le serveur : comptes, base de données, règles de gestion, import
+  netlify/functions/api.js     Point d'entrée pour l'hébergeur Netlify
+  netlify.toml, vercel.json    Réglages de l'hébergement (Netlify ou Vercel, au choix)
+  package.json                 Installe automatiquement le pilote de la base de données
+  local.js                     Facultatif : essai sur un ordinateur (voir la fin)
+  Les deux hébergeurs utilisent exactement les mêmes fichiers : envoyez tout sur GitHub, quel que soit celui que vous choisissez.
+
+------------------------------------------------------------------------------------------------
+CHOISIR L'HÉBERGEUR (tarifs à vérifier sur leurs sites, ils évoluent)
+------------------------------------------------------------------------------------------------
+NETLIFY (le moins cher)
+  - Formule "Personal" : environ 9 $ par mois (1 000 crédits). C'est la formule recommandée.
+  - La formule gratuite (300 crédits par mois) est une limite ferme : une fois les crédits consommés, le site est suspendu
+    jusqu'au mois suivant. À éviter pour une activité réelle.
+VERCEL
+  - La formule gratuite est réservée aux usages non commerciaux : il faut la formule "Pro", environ 20 $ par mois.
+Base de données (dans les deux cas) : Turso, avec une formule gratuite suffisante pour démarrer.
+
+------------------------------------------------------------------------------------------------
+ÉTAPE 1 (COMMUNE) : mettre les fichiers sur GitHub
+------------------------------------------------------------------------------------------------
+  1. Sur https://github.com, créez un compte gratuit (Sign up).
+  2. "+" en haut à droite > "New repository". Nom : la-familia. Choisissez "Private". "Create repository".
+  3. Cliquez sur le lien "uploading an existing file".
+  4. Dans le dossier la-familia de votre ordinateur, sélectionnez TOUT son contenu (les fichiers ET les dossiers api,
+     netlify et public) et glissez-le dans la fenêtre GitHub.
+  5. Vérifiez que la liste montre "api/[...slug].js", "netlify/functions/api.js" et "public/index.html", puis "Commit changes".
+  Si un dossier ne se glisse pas correctement : "Add file" > "Create new file", tapez le chemin complet comme nom
+  (par exemple api/[...slug].js : les "/" créent le dossier), copiez-y le contenu du fichier, puis "Commit changes".
+
+------------------------------------------------------------------------------------------------
+ÉTAPE 2 (COMMUNE) : créer la base de données Turso
+------------------------------------------------------------------------------------------------
+  1. Sur https://turso.tech, créez un compte (Sign up, avec GitHub par exemple) et choisissez la formule gratuite.
+  2. Créez une base de données (Create Database), nom : la-familia. Prenez la région proposée la plus proche de vos utilisateurs.
+  3. Sur la page de la base, notez deux informations (les intitulés peuvent varier légèrement) :
+       - l'URL de la base, qui commence par libsql://
+       - un jeton d'accès (Generate token / Create token), à copier tout de suite : il ne s'affiche qu'une fois.
+  Avec Vercel, ces deux valeurs peuvent aussi être ajoutées automatiquement (voir plus bas).
+
+------------------------------------------------------------------------------------------------
+OPTION A : NETLIFY
+------------------------------------------------------------------------------------------------
+  1. Sur https://app.netlify.com, connectez-vous avec GitHub. "Add new project" > "Import an existing project" > GitHub >
+     choisissez le dépôt la-familia. Les réglages sont lus dans netlify.toml : ne changez rien. "Deploy".
+  2. Ouvrez la formule : Billing / Plans > passez à "Personal".
+  3. Site configuration > Environment variables > "Add a variable" (une par ligne, valeurs pour tous les environnements) :
+       TURSO_DATABASE_URL   l'URL libsql:// de l'étape 2
+       TURSO_AUTH_TOKEN     le jeton de l'étape 2
+       SETUP_CODE           un code d'installation de votre choix (phrase de 3 ou 4 mots avec un chiffre). NOTEZ-LE.
+  4. Deploys > "Trigger deploy" > "Deploy site" (obligatoire pour prendre en compte les variables). Attendez "Published".
+  5. L'adresse du site est affichée en haut de la page (du type https://xxxx.netlify.app). Vous pouvez la renommer :
+     Site configuration > Change site name.
+
+------------------------------------------------------------------------------------------------
+OPTION B : VERCEL
+------------------------------------------------------------------------------------------------
+  1. Sur https://vercel.com, connectez-vous avec GitHub. "Add New..." > "Project" > dépôt la-familia > "Import".
+     Framework Preset : "Other". Ne changez rien d'autre. "Deploy".
+  2. Passez à la formule Pro (usage commercial) : Settings > Billing.
+  3. Base de données : soit vous ajoutez les variables à la main (Settings > Environment Variables : TURSO_DATABASE_URL et
+     TURSO_AUTH_TOKEN), soit onglet Storage > Create Database > Turso, connecté au projet (variables ajoutées seules).
+  4. Settings > Environment Variables : ajoutez SETUP_CODE (un code de votre choix). NOTEZ-LE.
+  5. Deployments > dernier déploiement > "..." > "Redeploy". Attendez "Ready". Adresse : bouton "Visit".
+
+------------------------------------------------------------------------------------------------
+ÉTAPE 3 (COMMUNE) : créer le compte gestionnaire, une seule fois
+------------------------------------------------------------------------------------------------
+  1. Ouvrez l'adresse du site. L'écran "Créer le compte gestionnaire" apparaît : code d'installation, nom d'utilisateur,
+     mot de passe (8 caractères minimum), confirmation. Le fuseau horaire est réglé d'après votre appareil.
+  2. Réglages : vérifiez le nom, la devise et le taux mensuel (20 % du capital par mois).
+  3. Si vous aviez déjà un suivi dans Google Sheets : Réglages > Importer depuis Google Sheets (voir plus bas).
+     Sinon, enregistrez le capital de départ dans Dépenses et retraits (type "Apport de capital").
+  4. Réglages > Comptes d'accès > Ajouter un compte :
+       - Propriétaire : consultation seule (rien n'est modifiable). C'est le type à choisir pour le propriétaire.
+       - Gestionnaire : peut tout saisir et modifier.
+     Créez dès maintenant un SECOND compte gestionnaire : c'est la meilleure protection contre un mot de passe oublié.
+  5. Envoyez à chaque personne l'adresse, son nom d'utilisateur et son mot de passe. Chacune peut ensuite changer son mot
+     de passe dans Réglages > Mon mot de passe.
+
+------------------------------------------------------------------------------------------------
+IMPORTER VOTRE SUIVI GOOGLE SHEETS
+------------------------------------------------------------------------------------------------
+  1. Dans Google Sheets : Fichier > Télécharger > Microsoft Excel (.xlsx). Ce fichier contient tous les onglets.
+     (Un fichier CSV fonctionne aussi, un onglet à la fois.)
+  2. Dans l'application (compte gestionnaire) : Réglages > Importer depuis Google Sheets > Choisir le fichier.
+     Le fichier est lu sur votre appareil.
+  3. Pour chaque onglet, l'application propose son contenu (Prêts, Paiements, Dépenses et retraits, ou Ne pas importer) et
+     repère les colonnes d'après leurs titres. Vérifiez et corrigez avec les menus. Les champs indispensables portent une étoile :
+       - Prêts : nom du client, montant prêté, date du prêt. Facultatifs : taux mensuel (20 % par défaut), date de clôture
+         (quand le capital a été rendu), statut (en cours, clôturé ou remboursé, perdu), total déjà payé, référence, téléphone,
+         adresse, garantie, notes.
+       - Paiements : date, montant, et la référence du prêt ou le nom du client (le paiement est rattaché à un prêt importé
+         dans le même fichier ; sans référence, au prêt le plus récent du client commencé avant ce paiement).
+       - Dépenses et retraits : date, montant, et si possible une colonne Type (dépense, retrait, apport).
+     Si les titres ne sont pas sur la première ligne, indiquez leur numéro de ligne. Les lignes vides et les lignes "Total" sont ignorées.
+  4. Choisissez le format des dates écrites en chiffres (jour/mois/année en France), puis "Analyser le fichier" : rien n'est
+     enregistré à ce stade. L'application affiche ce qu'elle va créer (clients, prêts, paiements, dépenses), les lignes qu'elle
+     ne peut pas lire (avec le numéro de ligne) et des remarques (par exemple un paiement supérieur au reste dû, ramené au reste dû).
+  5. "Importer". L'import est tout ou rien. Les clients sont regroupés par nom (deux lignes "Marie Joseph" donnent un seul client)
+     et un client déjà présent dans l'application est réutilisé. Un prêt déjà enregistré (même client, même montant, même date)
+     est ignoré, ce qui permet de recommencer sans doublons.
+  Option "Remplacer toutes les données" : à n'utiliser qu'au démarrage, pour repartir de zéro avec le contenu du fichier. Une
+  sauvegarde est téléchargée avant.
+  Les paiements importés sont répartis comme dans l'application : d'abord les intérêts (du plus ancien au mois en cours), puis le
+  capital. Un paiement supérieur à ce qui était dû est ramené à ce qui était dû (remarque affichée). Si un prêt est marqué
+  "clôturé/remboursé" mais que les paiements du fichier ne couvrent pas le solde, l'application ajoute un paiement de solde,
+  daté de la date de clôture si elle existe, et le signale dans les remarques : vérifiez ces lignes.
+  Le solde de caisse dépend du capital de départ : importez-le dans l'onglet des dépenses (Type "apport") ou saisissez-le ensuite.
+
+------------------------------------------------------------------------------------------------
+AU QUOTIDIEN
+------------------------------------------------------------------------------------------------
+SAUVEGARDES (important)
+  L'application ne peut pas enregistrer de copies automatiques sur un ordinateur. Téléchargez une sauvegarde chaque semaine :
+  Réglages > Télécharger une sauvegarde (le tableau de bord vous le rappelle). Conservez le fichier ailleurs (clé USB, e-mail).
+  Réglages > Restaurer une sauvegarde remplace les prêts et dépenses par ceux du fichier ; une copie de l'état actuel est d'abord
+  téléchargée. Les comptes ne sont pas concernés. Consultez aussi les options de sauvegarde proposées par Turso pour votre formule.
+
+METTRE À JOUR L'APPLICATION (si on vous envoie de nouveaux fichiers)
+  Sur GitHub, dans le dépôt la-familia : ouvrez le fichier concerné, remplacez son contenu (ou "Add file" > "Upload files"
+  avec le même nom), "Commit changes". L'hébergeur remet l'application en ligne tout seul en 1 à 2 minutes. Les données ne sont pas touchées.
+
+MOT DE PASSE GESTIONNAIRE OUBLIÉ
+  - Un autre compte gestionnaire peut réinitialiser le mot de passe : Réglages > Comptes d'accès.
+  - Sinon, il faut supprimer les comptes dans la console de la base Turso (les prêts et dépenses ne sont pas touchés), puis
+    refaire l'étape 3. Contactez la personne qui a mis l'application en ligne.
+
+SURVEILLER LA CONSOMMATION (Netlify)
+  Netlify facture en "crédits" (fonctions, requêtes, déploiements). Après une semaine d'usage, regardez Usage and billing pour
+  vérifier que la consommation reste largement sous les 1 000 crédits mensuels. Chaque mise en ligne d'une nouvelle version coûte aussi des crédits.
+
+RÈGLES DE CALCUL
+  - Un prêt n'a pas de durée. Chaque mois, le client verse 20 % (le taux) du capital prêté. Les intérêts ne s'ajoutent pas
+    au capital : chaque mois, l'intérêt est de 20 % du capital restant.
+  - Les mois se comptent à partir de la date du prêt (date anniversaire). Prêt du 15 janvier : le mois 1 va jusqu'au 15 février,
+    le mois 2 jusqu'au 15 mars, etc. (le 31 janvier + 1 mois = le 28 ou 29 février). L'intérêt d'un mois est dû à la fin de ce mois
+    et est en retard à partir du lendemain.
+  - Pour mettre fin au prêt, à n'importe quel moment, le client rend le capital et paie 20 % pour le mois en cours (pas de
+    prorata) : c'est le montant "Pour tout solder" affiché sur la fiche du prêt. S'il y a des intérêts impayés, ils s'y ajoutent.
+  - Un paiement rembourse d'abord les intérêts, du plus ancien au mois en cours, puis le capital. Si le capital est en partie rendu,
+    les mois suivants sont calculés sur le capital restant. Le prêt est clôturé quand tout le capital est rendu.
+  - Statuts : En cours, En retard (un intérêt échu n'est pas payé), Clôturé (capital rendu), Perdu (classé en perte : le capital
+    restant est alors compté comme une perte).
+  - Solde de caisse = apports + paiements reçus - prêts remis - dépenses - retraits du propriétaire.
+  - Bénéfice net = intérêts encaissés - dépenses - pertes. Les retraits du propriétaire et le capital rendu n'entrent pas dans le bénéfice.
+  - La date du jour suit le fuseau horaire choisi dans Réglages.
+
+SÉCURITÉ
+  - Connexion chiffrée (https) fournie par l'hébergeur.
+  - Mots de passe stockés sous forme chiffrée (scrypt), jamais en clair. 8 essais ratés depuis la même adresse bloquent la connexion 10 minutes.
+  - Le propriétaire ne peut rien modifier, même en essayant de contourner l'écran : le serveur refuse ses modifications.
+  - Choisissez des mots de passe longs et différents pour chaque personne. Ne partagez pas le compte gestionnaire.
+
+------------------------------------------------------------------------------------------------
+FACULTATIF : ESSAYER SUR UN ORDINATEUR
+------------------------------------------------------------------------------------------------
+  Node.js 22.13 ou plus récent est nécessaire (https://nodejs.org). Dans le dossier : "node local.js", puis ouvrir
+  http://localhost:3000 et créer le compte gestionnaire (aucun code d'installation n'est demandé sur l'ordinateur lui-même).
+  Les données de cet essai restent dans le dossier "data" et ne sont pas partagées avec la version en ligne :
+  pour les transférer, téléchargez une sauvegarde puis restaurez-la dans l'autre version.
